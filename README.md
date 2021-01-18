@@ -1,4 +1,4 @@
-# BSwap design spec
+# BSwap design spec(Comparison between AMM and PMM)
 
 Version: **0.01**, Update Date: **01-18-2020**
 
@@ -579,3 +579,6 @@ def tree_invariants():
    pair_b0_branch.total_supply == pair_b1_branch.total_supply
 ```
 
+
+
+### Credits to: Uniswap, ZKSwap, ZKSync, ZK-Snarks
