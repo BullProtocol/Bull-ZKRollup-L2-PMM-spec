@@ -74,6 +74,8 @@ In Layer2, each token is assigned one ID. The ID is synchronized between L1 and 
 
 ### 4. Swap Operations
 
+#### AMM Swap Operations
+
 There are four swap related operations. **CreatePair** helps create the swap pair, which is composed of two different tokens. **AddLiquidity** and **RemoveLiquidity** operations are used to add and remove liquidity. **Swap** operation is used to swap one token for the other token.
 
 All data types related in swap operations are listed as follows:
@@ -90,6 +92,10 @@ All data types related in swap operations are listed as follows:
 | AMOUNT_MANTISSA_BIT_WIDTH |         |    35 bit    |                |
 |  FEE_EXPONENT_BIT_WIDTH   |         |    5 bit     |                |
 |  FEE_MANTISSA_BIT_WIDTH   |         |    11 bit    |                |
+
+#### PMM Swap Operations
+
+There are 7 key operations. **CreatePair** helps create the swap pair, which is composed of two different tokens. **depositQuoteTo** and **depositBaseTo** adds base/quote token liquidity to the pool. **withdrawQuoteTo** and **withdrawBaseTo** removes base/quote token liquidity from the pool. **sellBaseToken** swaps base tokens for quote tokens while **sellQuoteToken** swaps quote tokens for base tokens. And both **sellBaseToken** and **sellQuoteToken** invokes **bswapCall** from UniswapArbitrageur library.
 
 #### a. CreatePair
 
