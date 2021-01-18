@@ -7,18 +7,19 @@ The design spec describes BSwap protocol and difference with Uniswap and ZKSwap.
 
 ### 1. Swap Protocol
 
-On BSwap,
-The swap protocol is exactly same as Uniswap, but the **swap path is limited to 1**. That is to say, currently only one token can be swapped to another token if and only if the pair for those two tokens is created.
+On BSwap V1.0(AMM), the swap protocol is exactly same as Uniswap, but the **swap path is limited to 1**. That is to say, currently only one token can be swapped to another token if and only if the pair for those two tokens is created. After the migrator is deployed, we would be able to migrate the liquidity from Pancakeswap to BSwap.
 
 https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/UniswapV2Router02.sol
 
-We will explore the balancer's approach later to allow complex token portfolios.
+We will not introduce Balancer's multi-token portfolio before BSwap V2.0 PMM.
 
 ### 2. Account and Pair Account
 
 The whole Layer 2 state is represented by one Merkle tree, which is leveled by Account and Token. The height of Account Merkle tree is `ACCOUNT_MERKLE_DEPTH` and the height of Token Merkle tree is `TOKEN_MERKLE_DEPTH`.
 
 ![account](./figs/account.png)
+
+#### For L2 on BSwap V1.0 AMM
 
 The Account node include the following fields:
 
@@ -42,6 +43,20 @@ BSwap protocol supports two account types: one is Account and the other is Pair 
 The Account "state" is calculated as follows:
 
 ![account_state](./figs/account_state.png)
+
+#### For L2 on BSWAP V2.0 PMM
+|       Name        |  Type  | Size (bytes) |             Comments             |
+| :---------------: | :----: | :----------: | :------------------------------: |
+|    PubKeyHash     |   -    |      20      | Layer2 Address(Public Key Hash) |
+|      Address      |   -    |      20      |          Layer1 Address          |
+|       NONCE       | uint32 |      4       |   Nonce of Layer2 Transaction    |
+|   **BaseToken ID** | uint16 |      2       |   BaseToken ID   |
+|   **QuoteToken ID** | uint16 |      2       |   QuoteToken ID   |
+|       **BaseAmount**       | uint128 |      16       |   Reserve value of BaseAmount    |
+|       **QuoteAmount**       | uint128 |      16       |   Reserve value of QuoteAmount     |
+|   **LP token ID** | uint16 |      2       |   Liquidity Provider Token ID   |
+|       **LP Total Amount**       | uint128 |      16       |   Total amount of Liquidity Provider Token     |
+| Balance Tree Root |   -    |      Fr      |           Fr of Bn256            |
 
 ### 3. Token Management
 
