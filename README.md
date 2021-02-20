@@ -1,272 +1,231 @@
-# BSwap design spec(Comparison between AMM and PMM)
+BULLSWAP design spec(Comparison between AMM and PMM)
+Version: 0.01, Update Date: 01-18-2020
 
-Version: **0.01**, Update Date: **01-18-2020**
+The design spec describes BULLSWAP protocol and difference with Uniswap and ZKSwap. Thanks to ZKSync, which provides the ZK Rollup framework for ERC20 token transfer, and thanks to ZKSwap, for ZK Rollup framework for L2 ERC20 token AMM swap. BULLSWAP is a L2 token Proactive Market Making swap protocol using ZK Rollup on Binance Smart Chain & Ethereum and based on the PLONK proof system.
 
-
-The design spec describes BSwap protocol and difference with Uniswap and ZKSwap. Thanks to ZKSync, which provides the ZK Rollup framework for ERC20 token transfer, and thanks to ZKSwap, for ZK Rollup framework for L2 ERC20 token AMM swap. BSwap is a L2 token Proactive Market Making swap protocol using ZK Rollup on Binance Smart Chain & Ethereum and based on the PLONK proof system.
-
-### 1. Swap Protocol
-
-On BSwap V1.0(AMM), the swap protocol is exactly same as Uniswap, but the **swap path is limited to 1**. That is to say, currently only one token can be swapped to another token if and only if the pair for those two tokens is created. After the migrator is deployed, we would be able to migrate the liquidity from Pancakeswap to BSwap.
+1. Swap Protocol
+On BULLSWAP V1.0(AMM), the swap protocol is exactly same as Uniswap, but the swap path is limited to 1. That is to say, currently only one token can be swapped to another token if and only if the pair for those two tokens is created. After the migrator is deployed, we would be able to migrate the liquidity from Pancakeswap to BULLSWAP.
 
 https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/UniswapV2Router02.sol
 
-We will not introduce Balancer's multi-token portfolio before BSwap V2.0 PMM.
+We will not introduce Balancer's multi-token portfolio before BULLSWAP V2.0 PMM.
 
-### 2. Account and Pair Account
+2. Account and Pair Account
+The whole Layer 2 state is represented by one Merkle tree, which is leveled by Account and Token. The height of Account Merkle tree is ACCOUNT_MERKLE_DEPTH and the height of Token Merkle tree is TOKEN_MERKLE_DEPTH.
 
-The whole Layer 2 state is represented by one Merkle tree, which is leveled by Account and Token. The height of Account Merkle tree is `ACCOUNT_MERKLE_DEPTH` and the height of Token Merkle tree is `TOKEN_MERKLE_DEPTH`.
+account
 
-![account](./figs/account.png)
-
-#### For L2 on BSwap V1.0 AMM
-
+For L2 on BULLSWAP V1.0 AMM
 The Account node include the following fields:
 
-|       Name        |  Type  | Size (bytes) |             Comments             |
-| :---------------: | :----: | :----------: | :------------------------------: |
-|    PubKeyHash     |   -    |      20      | Layer2 Address(Public Key Hash) |
-|      Address      |   -    |      20      |          Layer1 Address          |
-|       NONCE       | uint32 |      4       |   Nonce of Layer2 Transaction    |
-|   **Token0 ID** | uint16 |      2       |   Token0 ID   |
-|   **Token1 ID** | uint16 |      2       |   Token1 ID   |
-|       **Reserve0**       | uint128 |      16       |   Reserve value of Token0    |
-|       **Reserve1**       | uint128 |      16       |   Reserve value of Token1     |
-|   **LP token ID** | uint16 |      2       |   Liquidity Provider Token ID   |
-|       **LP Total Amount**       | uint128 |      16       |   Total amount of Liquidity Provider Token     |
-| Balance Tree Root |   -    |      Fr      |           Fr of Bn256            |
+Name	Type	Size (bytes)	Comments
+PubKeyHash	-	20	Layer2 Address(Public Key Hash)
+Address	-	20	Layer1 Address
+NONCE	uint32	4	Nonce of Layer2 Transaction
+Token0 ID	uint16	2	Token0 ID
+Token1 ID	uint16	2	Token1 ID
+Reserve0	uint128	16	Reserve value of Token0
+Reserve1	uint128	16	Reserve value of Token1
+LP token ID	uint16	2	Liquidity Provider Token ID
+LP Total Amount	uint128	16	Total amount of Liquidity Provider Token
+Balance Tree Root	-	Fr	Fr of Bn256
+The Token0 ID, Token1 ID, Reserve0, Reserve1, LP token ID and LP Total Amount fields are added for swap related operation, comparing with ZKSync's Account.
 
-The Token0 ID, Token1 ID, Reserve0, Reserve1, LP token ID and LP Total Amount fields are added for swap related operation, comparing with ZKSync's Account. 
-
-BSwap protocol supports two account types: one is Account and the other is Pair Account. For Account, the additional information is useless and empty. For Pair Account, the additional fields should be filled correctly and the **PubKeyHash field is set to zero**. 
+BULLSWAP protocol supports two account types: one is Account and the other is Pair Account. For Account, the additional information is useless and empty. For Pair Account, the additional fields should be filled correctly and the PubKeyHash field is set to zero.
 
 The Account "state" is calculated as follows:
 
-![account_state](./figs/account_state.png)
+account_state
 
-#### For L2 on BSWAP V2.0 PMM
-|       Name        |  Type  | Size (bytes) |             Comments             |
-| :---------------: | :----: | :----------: | :------------------------------: |
-|    PubKeyHash     |   -    |      20      | Layer2 Address(Public Key Hash) |
-|      Address      |   -    |      20      |          Layer1 Address          |
-|       NONCE       | uint32 |      4       |   Nonce of Layer2 Transaction    |
-|   **BaseToken ID** | uint16 |      2       |   BaseToken ID   |
-|   **QuoteToken ID** | uint16 |      2       |   QuoteToken ID   |
-|       **BaseAmount**       | uint128 |      16       |   Reserve value of BaseAmount    |
-|       **QuoteAmount**       | uint128 |      16       |   Reserve value of QuoteAmount     |
-|   **LP token ID** | uint16 |      2       |   Liquidity Provider Token ID   |
-|       **LP Total Amount**       | uint128 |      16       |   Total amount of Liquidity Provider Token     |
-| Balance Tree Root |   -    |      Fr      |           Fr of Bn256            |
+For L2 on BULLSWAP V2.0 PMM
+Name	Type	Size (bytes)	Comments
+PubKeyHash	-	20	Layer2 Address(Public Key Hash)
+Address	-	20	Layer1 Address
+NONCE	uint32	4	Nonce of Layer2 Transaction
+BaseToken ID	uint16	2	BaseToken ID
+QuoteToken ID	uint16	2	QuoteToken ID
+BaseAmount	uint128	16	Reserve value of BaseAmount
+QuoteAmount	uint128	16	Reserve value of QuoteAmount
+LP token ID	uint16	2	Liquidity Provider Token ID
+LP Total Amount	uint128	16	Total amount of Liquidity Provider Token
+Balance Tree Root	-	Fr	Fr of Bn256
+3. Token Management
+The BULLSWAP smart contract maintains a single list for tokens. The list is divided into two parts: one is for normal ETH/ERC20, BNB/BEP20 tokens and the other is for LP ERC20/BEP20 tokens. Both tokens can be transferred in L1 and L2. And both tokens can be deposited and withdrawn between L1 and L2.
 
-### 3. Token Management
-
-The BSwap smart contract maintains a single list for tokens. The list is divided into two parts: one is for normal ETH/ERC20, BNB/BEP20 tokens and the other is for LP ERC20/BEP20 tokens. **Both tokens can be transferred in L1 and L2. And both tokens can be deposited and withdrawn between L1 and L2.**
-
-#### a. Normal ERC20 token
-
+a. Normal ERC20 token
 In total 128 ERC20/BEP20 tokens are supported with index from 0 to 127. The index 0 is reserved for ETH/BNB.
 
-#### b. LP ERC20 token
-
+b. LP ERC20 token
 In total 2,048 - 128 = 1,920 LP ERC20 tokens are supported and LP ERC20 tokens from index 128 to index 2,047.
 
 In Layer2, each token is assigned one ID. The ID is synchronized between L1 and L2 through ZK rollup transactions.
 
-### 4. Swap Operations
-
-#### AMM Swap Operations
-
-There are four swap related operations. **CreatePair** helps create the swap pair, which is composed of two different tokens. **AddLiquidity** and **RemoveLiquidity** operations are used to add and remove liquidity. **Swap** operation is used to swap one token for the other token.
+4. Swap Operations
+AMM Swap Operations
+There are four swap related operations. CreatePair helps create the swap pair, which is composed of two different tokens. AddLiquidity and RemoveLiquidity operations are used to add and remove liquidity. Swap operation is used to swap one token for the other token.
 
 All data types related in swap operations are listed as follows:
 
-|           Name            |  Type   | Size (bytes) |    Comments    |
-| :-----------------------: | :-----: | :----------: | :------------: |
-|        ACCOUNT ID         | uint32  |      4       |                |
-|         TOKEN ID          | uint16  |      2       |                |
-|           NONCE           | uint32  |      4       |                |
-|          AMOUNT           | uint128 |      16      |                |
-|          ADDRESS          |         |      20      | Layer1 Address |
-|   NEW_PUBKEY_HASH_WIDTH   |         |      20      | Layer2 Address |
-| AMOUNT_EXPONENT_BIT_WIDTH |         |    5 bit     |                |
-| AMOUNT_MANTISSA_BIT_WIDTH |         |    35 bit    |                |
-|  FEE_EXPONENT_BIT_WIDTH   |         |    5 bit     |                |
-|  FEE_MANTISSA_BIT_WIDTH   |         |    11 bit    |                |
+Name	Type	Size (bytes)	Comments
+ACCOUNT ID	uint32	4	
+TOKEN ID	uint16	2	
+NONCE	uint32	4	
+AMOUNT	uint128	16	
+ADDRESS		20	Layer1 Address
+NEW_PUBKEY_HASH_WIDTH		20	Layer2 Address
+AMOUNT_EXPONENT_BIT_WIDTH		5 bit	
+AMOUNT_MANTISSA_BIT_WIDTH		35 bit	
+FEE_EXPONENT_BIT_WIDTH		5 bit	
+FEE_MANTISSA_BIT_WIDTH		11 bit	
+PMM Swap Operations
+There are 7 key operations. CreatePair helps create the swap pair, which is composed of two different tokens. depositQuoteTo and depositBaseTo adds base/quote token liquidity to the pool. withdrawQuoteTo and withdrawBaseTo removes base/quote token liquidity from the pool. sellBaseToken swaps base tokens for quote tokens while sellQuoteToken swaps quote tokens for base tokens. And both sellBaseToken and sellQuoteToken invokes BULLSWAPCall from UniswapArbitrageur library.
 
-#### PMM Swap Operations
+a. CreatePair
+The CreatePair operation starts from a L1 transaction. The BULLSWAP smart contract helps create one pair for the ERC20 smart contract and one associated LP token. The pair ERC20 smart contract address is used in L2 to identify the swap pair. And the LP token address is used in L2 binding with the LP token ID.
 
-There are 7 key operations. **CreatePair** helps create the swap pair, which is composed of two different tokens. **depositQuoteTo** and **depositBaseTo** adds base/quote token liquidity to the pool. **withdrawQuoteTo** and **withdrawBaseTo** removes base/quote token liquidity from the pool. **sellBaseToken** swaps base tokens for quote tokens while **sellQuoteToken** swaps quote tokens for base tokens. And both **sellBaseToken** and **sellQuoteToken** invokes **bswapCall** from UniswapArbitrageur library.
+create_pair
 
-#### a. CreatePair
+The pub data for CreatePair is listed as follows:
 
-The CreatePair operation starts from a L1 transaction. The BSwap smart contract helps create one pair for the ERC20 smart contract and one associated LP token. The pair ERC20 smart contract address is used in L2 to identify the swap pair. And the LP token address is used in L2 binding with the LP token ID.
-
-![create_pair](./figs/create_pair.png)
-
-The pub data for CreatePair is listed as follows: 
-
-|    Data     |    Type    | Size |     Comments      |
-| :---------: | :--------: | :--: | :---------------: |
-|     OP      |            |  1   |         8         |
-|  accountId  | ACCOUNT ID |  4   | Layer2 account ID |
-|  tokenIdA   |  TOKEN ID  |  2   |  Layer2 token ID  |
-|  tokenIdB   |  TOKEN ID  |  2   |  Layer2 token ID  |
-|  tokenPair  |  TOKEN ID  |  2   |   Pair token ID   |
-| addressPair |  ADDRESS   |  20  |                   |
-
-#### b. AddLiquidity
-
+Data	Type	Size	Comments
+OP		1	8
+accountId	ACCOUNT ID	4	Layer2 account ID
+tokenIdA	TOKEN ID	2	Layer2 token ID
+tokenIdB	TOKEN ID	2	Layer2 token ID
+tokenPair	TOKEN ID	2	Pair token ID
+addressPair	ADDRESS	20	
+b. AddLiquidity
 When one pair is created, a user can add liquidity to the pair by providing the two specified assets. The AddLiqudity operation starts from L2.
 
 On ZKSwap, to add liquidity requires adding liquidity to both side of the token pair. It works as follows:
 
-![add_liquidity](./figs/add_liquidity.png)
+add_liquidity
 
-By adding liquidity, one account is rewarded with the liquidity token. The liquidity token is maintained in L2, and the liquidity token can be withdrawn to L1. 
+By adding liquidity, one account is rewarded with the liquidity token. The liquidity token is maintained in L2, and the liquidity token can be withdrawn to L1.
 
 The pub data for AMM AddLiquidity is listed as follows:
 
-|     Data      |                         Type                          | Size |           Comments           |
-| :-----------: | :---------------------------------------------------: | :--: | :--------------------------: |
-|      OP       |                                                       |  1   |              9               |
-|   accountId   |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-| accountPairId |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-| amountADesire | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   | Layer2 tokenA desired amount |
-|  amountAMin   | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |   Layer2 tokenA min amount   |
-| amountBDesire | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   | Layer2 tokenB desired amount |
-|  amountBMin   | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |   Layer2 tokenB min amount   |
-|     feeA      |    FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH    |  2   |    Layer2 tokenA fee = 0     |
-|     feeB      |    FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH    |  2   |    Layer2 tokenB fee = 0     |
-|    token0     |                       TOKEN ID                        |  2   |        token0 of pair        |
-|    token1     |                       TOKEN ID                        |  2   |        token1 of pair        |
-|    lpToken    |                       TOKEN ID                        |  2   |       lp Token of pair       |
-
-However on BSwap, it allows single side liquidity provisioning and there are no minimal deposit requirements and restrictions on asset types. Unlike Uniswap/ZKswap, there's no AddLiquidity function, instead, it is splited into two functions, depositBase and depositQuote. The asking liquidity is solely determined by the amount of base token in the pool, and the bidding liquidity is solely determined by the amount of quote tokens in the pool. It allows the base and quote pools to have different sizes, and thus allows liquidity providers to deposit any amount of either quote or base tokens, rather than both (like Uniswap).
+Data	Type	Size	Comments
+OP		1	9
+accountId	ACCOUNT ID	4	Layer2 account ID
+accountPairId	ACCOUNT ID	4	Layer2 account ID
+amountADesire	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	Layer2 tokenA desired amount
+amountAMin	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	Layer2 tokenA min amount
+amountBDesire	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	Layer2 tokenB desired amount
+amountBMin	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	Layer2 tokenB min amount
+feeA	FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH	2	Layer2 tokenA fee = 0
+feeB	FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH	2	Layer2 tokenB fee = 0
+token0	TOKEN ID	2	token0 of pair
+token1	TOKEN ID	2	token1 of pair
+lpToken	TOKEN ID	2	lp Token of pair
+However on BULLSWAP, it allows single side liquidity provisioning and there are no minimal deposit requirements and restrictions on asset types. Unlike Uniswap/ZKswap, there's no AddLiquidity function, instead, it is splited into two functions, depositBase and depositQuote. The asking liquidity is solely determined by the amount of base token in the pool, and the bidding liquidity is solely determined by the amount of quote tokens in the pool. It allows the base and quote pools to have different sizes, and thus allows liquidity providers to deposit any amount of either quote or base tokens, rather than both (like Uniswap).
 
 The pub data for PMM depositQuoteTo is listed as follows:
-|     Data      |                         Type                          | Size |           Comments           |
-| :-----------: | :---------------------------------------------------: | :--: | :--------------------------: |
-|      OP       |                                                       |  1   |              9               |
-|   accountId   |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-| accountPairId |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-|    lpToken    |                       TOKEN ID                        |  2   |      Deposit To lpToken      |
-|  quoteAmount  | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   | L2 QuoteToken desired amount |
 
+Data	Type	Size	Comments
+OP		1	9
+accountId	ACCOUNT ID	4	Layer2 account ID
+accountPairId	ACCOUNT ID	4	Layer2 account ID
+lpToken	TOKEN ID	2	Deposit To lpToken
+quoteAmount	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	L2 QuoteToken desired amount
 The pub data for PMM depositBaseTo is listed as follows:
-|     Data      |                         Type                          | Size |           Comments           |
-| :-----------: | :---------------------------------------------------: | :--: | :--------------------------: |
-|      OP       |                                                       |  1   |              9               |
-|   accountId   |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-| accountPairId |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-|    lpToken    |                       TOKEN ID                        |  2   |      Deposit To lpToken      |
-|   baseAmount  | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |  L2 BaseToken desired amount |
 
-#### c. RemoveLiquidity
-
-On Uniswap and ZKSwap,
-Remove liquidity can be used to remove specified tokens from one pair. The RemoveLiquidity operation starts from L2, which is opposite from AddLiquidity.
+Data	Type	Size	Comments
+OP		1	9
+accountId	ACCOUNT ID	4	Layer2 account ID
+accountPairId	ACCOUNT ID	4	Layer2 account ID
+lpToken	TOKEN ID	2	Deposit To lpToken
+baseAmount	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	L2 BaseToken desired amount
+c. RemoveLiquidity
+On Uniswap and ZKSwap, Remove liquidity can be used to remove specified tokens from one pair. The RemoveLiquidity operation starts from L2, which is opposite from AddLiquidity.
 
 The pub data for RemoveLiquidity is listed as follows:
 
-|     Data      |                         Type                          | Size | Comments |
-| :-----------: | :---------------------------------------------------: | :--: | :------: |
-|      OP       |                                                       |  1   |    10    |
-|   accountId   |                      ACCOUNT ID                       |  4   |          |
-| accountPairId |                      ACCOUNT ID                       |  4   |          |
-|  amountAMin   | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |          |
-|     feeA      |    FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH    |  5   |    0     |
-|  amountBMin   | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |          |
-|     feeB      |    FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH    |  5   |    0     |
-|  amountToken  | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |          |
+Data	Type	Size	Comments
+OP		1	10
+accountId	ACCOUNT ID	4	
+accountPairId	ACCOUNT ID	4	
+amountAMin	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	
+feeA	FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH	5	0
+amountBMin	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	
+feeB	FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH	5	0
+amountToken	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	
+On BULLSWAP, removing liquidity is also splited into two parts:
 
-On BSwap, removing liquidity is also splited into two parts:
+The pub data for BULLSWAP PMM withdrawQuoteTo is listed as follows:
 
-The pub data for BSwap PMM withdrawQuoteTo is listed as follows:
-|     Data      |                         Type                          | Size |           Comments           |
-| :-----------: | :---------------------------------------------------: | :--: | :--------------------------: |
-|      OP       |                                                       |  1   |              9               |
-|   accountId   |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-| accountPairId |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-|    lpToken    |                       TOKEN ID                        |  2   |      Deposit To lpToken      |
-|  quoteAmount  | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   | L2 QuoteToken desired amount |
+Data	Type	Size	Comments
+OP		1	9
+accountId	ACCOUNT ID	4	Layer2 account ID
+accountPairId	ACCOUNT ID	4	Layer2 account ID
+lpToken	TOKEN ID	2	Deposit To lpToken
+quoteAmount	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	L2 QuoteToken desired amount
+The pub data for BULLSWAP PMM withdrawBaseTo is listed as follows:
 
-The pub data for BSwap PMM withdrawBaseTo is listed as follows:
-|     Data      |                         Type                          | Size |           Comments           |
-| :-----------: | :---------------------------------------------------: | :--: | :--------------------------: |
-|      OP       |                                                       |  1   |              9               |
-|   accountId   |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-| accountPairId |                      ACCOUNT ID                       |  4   |      Layer2 account ID       |
-|    lpToken    |                       TOKEN ID                        |  2   |      Deposit To lpToken      |
-|   baseAmount  | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |  L2 BaseToken desired amount |
+Data	Type	Size	Comments
+OP		1	9
+accountId	ACCOUNT ID	4	Layer2 account ID
+accountPairId	ACCOUNT ID	4	Layer2 account ID
+lpToken	TOKEN ID	2	Deposit To lpToken
+baseAmount	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	L2 BaseToken desired amount
+d. Swap
+On ZKSwap(Uniswap AMM): Swap is used to swap one token for another token, in the one pair account. From one pair account, the swap ratio depends on balances of the two specified tokens. Note that swap operation is supported on one Account pair.
 
-#### d. Swap 
-
-On ZKSwap(Uniswap AMM):
-Swap is used to swap one token for another token, in the one pair account. From one pair account, the swap ratio depends on balances of the two specified tokens. Note that **swap operation is supported on one Account pair**.
-
-![swap](figs/swap.png)
+swap
 
 The pub data for Swap is listed as follows:
 
-|     Data      |                         Type                          | Size |        Comments        |
-| :-----------: | :---------------------------------------------------: | :--: | :--------------------: |
-|      OP       |                                                       |  1   |           11           |
-|   accountId   |                      ACCOUNT ID                       |  4   |                        |
-|  accountToId  |                      ACCOUNT ID                       |  4   |                        |
-| accountPairId |                      ACCOUNT ID                       |  4   |                        |
-|   tokenId0    |                       TOKEN ID                        |  2   | Layer2 token ID (from) |
-|   tokenId1    |                       TOKEN ID                        |  2   |  Layer2 token ID (to)  |
-|   amountIn    | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |       amount in        |
-| amountOutMin  | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   |     min amount out     |
-|     fee0      |    FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH    |  2   |      swap fee = 0      |
-|     fee1      |    FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH    |  2   |      swap fee = 0      |
-
-However On BSwap:
-Swap is splited into two parts, bidding with base token and asking with quote token.
+Data	Type	Size	Comments
+OP		1	11
+accountId	ACCOUNT ID	4	
+accountToId	ACCOUNT ID	4	
+accountPairId	ACCOUNT ID	4	
+tokenId0	TOKEN ID	2	Layer2 token ID (from)
+tokenId1	TOKEN ID	2	Layer2 token ID (to)
+amountIn	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	amount in
+amountOutMin	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	min amount out
+fee0	FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH	2	swap fee = 0
+fee1	FEE_EXPONENT_BIT_WIDTH + FEE_MANTISSA_BIT_WIDTH	2	swap fee = 0
+However On BULLSWAP: Swap is splited into two parts, bidding with base token and asking with quote token.
 
 The pub data for sellBaseToken is listed as follows:
-|     Data      |                         Type                          | Size |        Comments        |
-| :-----------: | :---------------------------------------------------: | :--: | :--------------------: |
-|      OP       |                                                       |  1   |           11           |
-|   accountId   |                      ACCOUNT ID                       |  4   |                        |
-|  accountToId  |                      ACCOUNT ID                       |  4   |                        |
-| accountPairId |                      ACCOUNT ID                       |  4   |                        |
-|   baseToken   |                       TOKEN ID                        |  2   | Layer2 token ID(base)  |
-|   quoteToken  |                       TOKEN ID                        |  2   | Layer2 token ID(quote) |
-|    amount     | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   | sell Base Token amount |
-|   bswapCall   |   BOOL + AMOUNT_EXPONENT_MANTISSA + PAYQUOTE + DATA   |  16  |       bswapcallee      |
 
+Data	Type	Size	Comments
+OP		1	11
+accountId	ACCOUNT ID	4	
+accountToId	ACCOUNT ID	4	
+accountPairId	ACCOUNT ID	4	
+baseToken	TOKEN ID	2	Layer2 token ID(base)
+quoteToken	TOKEN ID	2	Layer2 token ID(quote)
+amount	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	sell Base Token amount
+BULLSWAPCall	BOOL + AMOUNT_EXPONENT_MANTISSA + PAYQUOTE + DATA	16	BULLSWAPcallee
 The pub data for sellQuoteToken is listed as follows:
-|     Data      |                         Type                          | Size |        Comments        |
-| :-----------: | :---------------------------------------------------: | :--: | :--------------------: |
-|      OP       |                                                       |  1   |           11           |
-|   accountId   |                      ACCOUNT ID                       |  4   |                        |
-|  accountToId  |                      ACCOUNT ID                       |  4   |                        |
-| accountPairId |                      ACCOUNT ID                       |  4   |                        |
-|   baseToken   |                       TOKEN ID                        |  2   | Layer2 token ID(base)  |
-|   quoteToken  |                       TOKEN ID                        |  2   | Layer2 token ID(quote) |
-|    amount     | AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH |  5   | sell Quote Token amount|
-|   bswapCall   |   BOOL + AMOUNT_EXPONENT_MANTISSA + PAYQUOTE + DATA   |  16  |       bswapcallee      |
 
-### 5. Circuit Design
-
+Data	Type	Size	Comments
+OP		1	11
+accountId	ACCOUNT ID	4	
+accountToId	ACCOUNT ID	4	
+accountPairId	ACCOUNT ID	4	
+baseToken	TOKEN ID	2	Layer2 token ID(base)
+quoteToken	TOKEN ID	2	Layer2 token ID(quote)
+amount	AMOUNT_EXPONENT_BIT_WIDTH + AMOUNT_MANTISSA_BIT_WIDTH	5	sell Quote Token amount
+BULLSWAPCall	BOOL + AMOUNT_EXPONENT_MANTISSA + PAYQUOTE + DATA	16	BULLSWAPcallee
+5. Circuit Design
 The global state of L2 is updated by transaction execution and verified again by circuit. When one transaction is applied on circuit, it is "divided" into OperationBranch and Operation Arguments. OperationBranch describes the Merkel path. Operation Arguments describe all other information besides branches.
 
-![witness_logic](./figs/witness_logic.png)
+witness_logic
 
 Operation is an important structure, which is the "smallest" circuit block.
 
-![operation](./figs/operation.png)
+operation
 
 One logic transaction is split into several operations. And one block can support dynamically different operation numbers:
 
-![circuit_proof_arch](./figs/circuit_proof_arch.png)
+circuit_proof_arch
 
-#### 5.a CreatePair
-
+5.a CreatePair
 The CreatePair circuit tries to create one pair account with the specified token information.
 
-```python
 # CreatePairOp - Rollup operation 
 # OnchainOp - public data generated by executing this rollup op
 
@@ -287,13 +246,9 @@ def pubdata_invariants():
    OnchainOp.token1 = CreatePairOp.op.token_b
    OnchainOp.lp_token = CreatePairOp.op.token_liquidity
    OnchainOp.pair_address = CreatePairOp.op.pair_address
-```
+5.b AddLiquidity
+add_liquidity_branch
 
-#### 5.b AddLiquidity
-
-![add_liquidity_branch](./figs/add_liquidity_branch.png)
-
-```python
 # AddLiquidityOp - Rollup operation 
 # OnchainOp      - public data generated by executing this rollup op
 
@@ -380,13 +335,9 @@ def pubdata_invariants():
    OnchainOp.t0 == AddLiquidityOp.tx.token0
    OnchainOp.t1 == AddLiquidityOp.tx.token1
    OnchainOp.lp_token == AddLiquidityOp.tx.token_liquidity
-```
-
-#### 5.c RemoveLiquidity
-
+5.c RemoveLiquidity
 The RemoveLiquidity operation is the reverse of AddLiquidity.
 
-```python
 # RemoveLiquidityOp - Rollup operation 
 # OnchainOp         - public data generated by executing this rollup op
 
@@ -443,13 +394,9 @@ def pubdata_invariants():
    OnchainOp.amount1_min_packed == RemoveLiquidityOp.tx.packed_amount1_min
    OnchainOp.fee1_packed == RemoveLiquidityOp.tx.packed_fee1
    OnchainOp.lp_amount_packed == RemoveLiquidityOp.tx.packed_amount_liquidity
-```
+5.d Swap
+swap_branch
 
-#### 5.d Swap
-
-![swap_branch](./figs/swap_branch.png)
-
-```python
 # SwapOp    - Rollup operation 
 # Block     - block in which this rollup operation is executed
 # OnchainOp - public data generated by executing this rollup operation
@@ -511,46 +458,37 @@ def pubdata_invariants():
    OnchainOp.amount_out_min_packed == SwapOp.tx.packed_amount_out_min
    OnchainOp.fee_in_packed == SwapOp.tx.packed_fee_in
    OnchainOp.fee_out_packed == SwapOp.tx.packed_fee_out
-```
+6. Fee Model
+In BULLSWAP protocol there is a fee for the Swap operation, but no fees for the other operations.
 
-### 6. Fee Model
-
-In BSwap protocol there is a fee for the Swap operation, but no fees for the other operations.
-
-|            OP name             | OP number | Fee  |    FeeTo     |          Comments          |
-| :----------------------------: | :-------: | :--: | :----------: | :------------------------: |
-|              Noop              |     0     |  0   |              |                            |
-|        Deposit         |     1     |  0   |              |          Layer 1           |
-| TransferToNew  |     2     |  0   |     |                            |
-|        Withdraw        |     3     |  0   |     |                            |
-|       Close        |     4     |  0   |              | Dedicated and not supported |
-|        Transfer        |     5     |  0   |     |                            |
-|        FullExit        |     6     |  0   |              | Layer 1 |
-| ChangePubKey |     7     |  0   |              |                            |
-|     CreatePair     |     8     |  0   |              |          Layer 1           |
-|   AddLiquidity   |     9     |  0   |     |                            |
-| RemoveLiquidity |    10     |  0   |     |                            |
-|          Swap          |    11     | 0.3% | LP/Operator | 0.25% LP + 0.05% Operator |
-
-### 7. Exodus Mode
-
-If a L1 request is NOT handled in **3 days**, BSwap protocol enters exodus mode, which applies to the entire BSwap platform. If exodus mode is on, users can and should provide proof of assets on L2 and withdraw to L1.
+OP name	OP number	Fee	FeeTo	Comments
+Noop	0	0		
+Deposit	1	0		Layer 1
+TransferToNew	2	0		
+Withdraw	3	0		
+Close	4	0		Dedicated and not supported
+Transfer	5	0		
+FullExit	6	0		Layer 1
+ChangePubKey	7	0		
+CreatePair	8	0		Layer 1
+AddLiquidity	9	0		
+RemoveLiquidity	10	0		
+Swap	11	0.3%	LP/Operator	0.25% LP + 0.05% Operator
+7. Exodus Mode
+If a L1 request is NOT handled in 3 days, BULLSWAP protocol enters exodus mode, which applies to the entire BULLSWAP platform. If exodus mode is on, users can and should provide proof of assets on L2 and withdraw to L1.
 
 Basically, there are two kinds of assets from the exodus mode point of view: one is a normal ERC20 token and the other is liquidity tokens in one pair.
 
-#### a. Normal ERC20 Token
+a. Normal ERC20 Token
+For normal ERC20 token, one Merkle path should be verified with the latest Merkle root.
 
-For normal ERC20 token, one Merkle path should be verified with the latest Merkle root. 
+exit_normal
 
-![exit_normal](./figs/exit_normal.png)
+b. LP ERC20 Token
+If one user tries to withdraw assets in one Pair account to L1 on exodus mode, one user should provide the proof about LP ERC20 token amount and correct Pair account information. Due to the fact, LP ERC20 token can be spreaded between L1 and L2. If exodus mode, the amount LP token is the total amount of L1 and L2.
 
-#### b. LP ERC20 Token
+exit_pair
 
-If one user tries to withdraw assets in one Pair account to L1 on exodus mode, one user should provide the proof about LP ERC20 token amount and correct Pair account information. Due to the fact, LP ERC20 token can be spreaded between L1 and L2. If exodus mode, **the amount LP token is the total amount of L1 and L2**. 
-
-![exit_pair](./figs/exit_pair.png)
-
-```python
 # LP Exit Circuit - LP Exit for Exodus mode
 # OnchainOp - public data generated for lp exit
 
@@ -598,8 +536,4 @@ def tree_invariants():
    pair_b0_branch.reserve0 == pair_b1_branch.reserve0
    pair_b0_branch.reserve1 == pair_b1_branch.reserve1
    pair_b0_branch.total_supply == pair_b1_branch.total_supply
-```
-
-
-
-### Credits to: Uniswap, ZKSwap, ZKSync, ZK-Snarks
+Credits to: Uniswap, ZKSwap, ZKSync, ZK-Snarks
